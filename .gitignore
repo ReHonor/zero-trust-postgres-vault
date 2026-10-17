@@ -1,0 +1,16 @@
+# Secrets and generated material, never commit these
+.env
+certs/
+*.key
+*.pem
+*.csr
+*.srl
+
+# Logs and runtime
+*.log
+logs/
+
+# Python
+__pycache__/
+.venv/
+*.pyc
