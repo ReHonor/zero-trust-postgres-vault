@@ -37,3 +37,13 @@ PostgreSQL 16 that only accepts TLS + SCRAM connections, audits every action and
 - During first init a temporary server listens on the socket only, so the healthcheck uses TCP.
 - Inserting into serial columns needs USAGE on the sequences.
 - pgaudit may log statement text including passwords: protect log access (see limitations).
+
+## Security finding: password in the audit log
+- Symptom: `docker compose logs postgres | grep -ci "create role.*password"` returned 1.
+- Cause: psql substitutes `:'vault_admin_password'` on the client side, so the server audits the full `CREATE ROLE ... PASSWORD '<value>'` statement, password included. The `<not logged>` suffix in a pgaudit line refers to bind parameters, not to literals in the statement text.
+- Fix: `SET pgaudit.log = 'none'` just before that statement and `RESET pgaudit.log` right after. Secrets were regenerated and the volume recreated, and the leak count is now 0.
+- Residual risk: the bootstrap password is replaced by Vault (`rotate-root`) in Phase 3. Dynamic passwords created by Vault will need the same care (see Phase 3).
+
+## Operational notes
+- The healthcheck logs a `connection received` line with `user=[unknown]` every few seconds when `log_connections=on`. Monitoring must filter these.
+- Never regenerate `.env` without `docker compose down -v`: the password stored in the data volume would no longer match.

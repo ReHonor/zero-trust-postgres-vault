@@ -13,7 +13,9 @@ CREATE ROLE analyst_ro NOLOGIN;
 CREATE ROLE dba_admin  NOLOGIN;
 
 -- The account Vault uses to create and drop temporary users
+SET pgaudit.log = 'none';  -- keep the password out of the audit log
 CREATE ROLE vault_admin WITH LOGIN CREATEROLE PASSWORD :'vault_admin_password';
+RESET pgaudit.log;
 GRANT app_rw, analyst_ro, dba_admin TO vault_admin WITH ADMIN TRUE, INHERIT FALSE;
 GRANT pg_signal_backend TO vault_admin;
 
