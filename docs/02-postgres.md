@@ -56,9 +56,10 @@ PostgreSQL 16 that only accepts TLS + SCRAM connections, audits every action and
 - Lesson: a negative test is only meaningful if the matching positive control passes.
 
 ## Layered denial: schema before table
-- `vault_admin` running `SELECT * FROM customers` gets `permission denied for schema public`, not a table error. PostgreSQL checks database CONNECT, then schema USAGE, then table privileges, then column privileges. The REVOKE on the schema is a second wall in front of the table grants.
+- `vault_admin` running `SELECT * FROM customers` gets `relation "customers" does not exist`, not a permission error: an unqualified name is only looked up in schemas the role has USAGE on, so the table is invisible. The qualified `SELECT * FROM public.customers` gives `permission denied for schema public`. PostgreSQL checks database CONNECT, then schema USAGE, then table privileges, then column privileges, so the schema REVOKE is a second wall in front of the table grants.
 
 ## Finding: INHERIT FALSE does not prevent SET ROLE
 - In PostgreSQL 16 a role grant has three options: ADMIN, INHERIT, SET. With INHERIT FALSE alone, `vault_admin` could still run `SET ROLE analyst_ro` and read data.
 - Fix: `GRANT ... TO vault_admin WITH ADMIN TRUE, INHERIT FALSE, SET FALSE` (also in init.sql). Verified: `SET ROLE` now fails with `permission denied to set role`.
 - Remaining limit: ADMIN OPTION lets vault_admin grant these three groups to other roles. A compromised Vault DB account has no superuser powers and is confined to the three groups, but it is not unable to reach their data.
+- Verified by rebuilding from scratch (`docker compose down -v` then `up`): the SET FALSE grant comes from init.sql, not only from a live fix.
