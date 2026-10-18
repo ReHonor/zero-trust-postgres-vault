@@ -47,3 +47,18 @@ PostgreSQL 16 that only accepts TLS + SCRAM connections, audits every action and
 ## Operational notes
 - The healthcheck logs a `connection received` line with `user=[unknown]` every few seconds when `log_connections=on`. Monitoring must filter these.
 - Never regenerate `.env` without `docker compose down -v`: the password stored in the data volume would no longer match.
+
+## Troubleshooting: "password authentication failed" after regenerating secrets
+- Symptom: `vault_admin` login failed right after `.env` was regenerated and the volume recreated.
+- Cause: Docker Compose gives variables exported in the shell priority over `.env`. The shell still held the old passwords from an earlier `. ./.env`, so the database was initialised with the old values.
+- Diagnosis: compare a short sha256 prefix of the variable inside the container (`printenv`) with the one in `.env`. Never print the secret itself.
+- Fix: `unset` the variables, `docker compose down -v`, `docker compose up -d --build`. Tests read the password from the container's own environment instead of exporting secrets into the interactive shell.
+- Lesson: a negative test is only meaningful if the matching positive control passes.
+
+## Layered denial: schema before table
+- `vault_admin` running `SELECT * FROM customers` gets `permission denied for schema public`, not a table error. PostgreSQL checks database CONNECT, then schema USAGE, then table privileges, then column privileges. The REVOKE on the schema is a second wall in front of the table grants.
+
+## Finding: INHERIT FALSE does not prevent SET ROLE
+- In PostgreSQL 16 a role grant has three options: ADMIN, INHERIT, SET. With INHERIT FALSE alone, `vault_admin` could still run `SET ROLE analyst_ro` and read data.
+- Fix: `GRANT ... TO vault_admin WITH ADMIN TRUE, INHERIT FALSE, SET FALSE` (also in init.sql). Verified: `SET ROLE` now fails with `permission denied to set role`.
+- Remaining limit: ADMIN OPTION lets vault_admin grant these three groups to other roles. A compromised Vault DB account has no superuser powers and is confined to the three groups, but it is not unable to reach their data.
