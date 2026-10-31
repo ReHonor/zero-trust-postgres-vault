@@ -62,6 +62,7 @@ services:
       VAULT_ADDR: http://127.0.0.1:8200
     volumes:
       - ./certs/ca.crt:/vault/certs/ca.crt:ro
+      - vault-audit:/vault/logs
     ports:
       - "127.0.0.1:8200:8200"
     networks:
@@ -77,6 +78,7 @@ services:
 
 volumes:
   pgdata:
+  vault-audit:
 
 networks:
   zt:
