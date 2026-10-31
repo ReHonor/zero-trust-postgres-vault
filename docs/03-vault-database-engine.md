@@ -4,7 +4,7 @@
 Replace the static database password with unique, short-lived users created on demand by Vault.
 
 ## Design decisions
-- Vault 1.21 line, exact tag pinned in docker-compose.yml (official image, arm64 build used on the Oracle VM). Image digest: DIGEST_PLACEHOLDER
+- Vault 1.21 line, exact tag pinned in docker-compose.yml (official image, arm64 build used on the Oracle VM). Image digest: hashicorp/vault@sha256:4e33b126a59c0c333b76fb4e894722462659a6bec7c48c9ee8cea56fccfd2569
 - Dev mode (in-memory, HTTP, fixed root token) is accepted for the lab and listed as a limitation. `restart: "no"` because a restart wipes all state.
 - Vault gets only `ca.crt`. It verifies PostgreSQL with `sslmode=verify-full` against hostname `postgres`.
 - Connection config uses the templated URL form (`{{username}}`/`{{password}}`), which `rotate-root` requires.
