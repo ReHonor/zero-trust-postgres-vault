@@ -38,11 +38,13 @@ PostgreSQL 16 that only accepts TLS + SCRAM connections, audits every action and
 - Inserting into serial columns needs USAGE on the sequences.
 - pgaudit may log statement text including passwords: protect log access (see limitations).
 
-## Security finding: password in the audit log
-- Symptom: `docker compose logs postgres | grep -ci "create role.*password"` returned 1.
-- Cause: psql substitutes `:'vault_admin_password'` on the client side, so the server audits the full `CREATE ROLE ... PASSWORD '<value>'` statement, password included. The `<not logged>` suffix in a pgaudit line refers to bind parameters, not to literals in the statement text.
-- Fix: `SET pgaudit.log = 'none'` just before that statement and `RESET pgaudit.log` right after. Secrets were regenerated and the volume recreated, and the leak count is now 0.
-- Residual risk: the bootstrap password is replaced by Vault (`rotate-root`) in Phase 3. Dynamic passwords created by Vault will need the same care (see Phase 3).
+## Passwords in logs (corrected finding, verified by experiment)
+- Earlier conclusion (wrong): a grep count of 1 for `create role.*password` was read as "the bootstrap password is logged in clear text". The line was never inspected: it was pgaudit's redacted entry. A count of matches is not evidence.
+- Experiment A (successful `CREATE ROLE ... PASSWORD 'marker'`): the marker appears nowhere in the logs. pgaudit logs `... PASSWORD <REDACTED>`.
+- Experiment B (same statement failing because the role exists): the marker appears once, in the `STATEMENT:` context line that PostgreSQL itself writes after an error (`log_min_error_statement` defaults to `error`). pgaudit redacts only its own entries.
+- Experiment C (`SET log_min_error_statement = 'panic'` in the session before the failing statement): the marker no longer appears in the logs.
+- Consequences: (1) pgaudit alone does not make password-bearing statements safe: a failure leaks them. (2) Vault hashes passwords itself (`password_authentication=scram-sha-256`), so even a failing statement would only carry a SCRAM verifier. (3) init.sql wraps the bootstrap `CREATE ROLE ... PASSWORD` with `SET`/`RESET log_min_error_statement`; Vault's `rotate-root` (phase 3B) will replace that password. (4) Never enable `log_statement = ddl|all` on a server that handles passwords: use pgaudit.
+- A first workaround (`SET pgaudit.log = 'none'`) was unnecessary and was removed: it also hid the creation of the privileged vault_admin role from the audit trail.
 
 ## Operational notes
 - The healthcheck logs a `connection received` line with `user=[unknown]` every few seconds when `log_connections=on`. Monitoring must filter these.

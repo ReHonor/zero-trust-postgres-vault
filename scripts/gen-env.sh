@@ -10,5 +10,6 @@ umask 077
 {
   echo "POSTGRES_SUPERUSER_PASSWORD=$(openssl rand -hex 24)"
   echo "VAULT_ADMIN_BOOTSTRAP_PASSWORD=$(openssl rand -hex 24)"
+  echo "VAULT_ROOT_TOKEN=$(openssl rand -hex 20)"
 } > .env
 echo ".env created (mode 600)"
