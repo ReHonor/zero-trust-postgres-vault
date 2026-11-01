@@ -15,3 +15,9 @@ Make PostgreSQL's audit and security events available to a read-only consumer (t
 ## Verification
 - The full cycle `scripts/reset-lab.sh` -> `start.sh` -> `demo.sh` ran from zero with the new logging.
 - Log files exist with the expected owner and mode; the JSON audit line has the expected fields.
+
+## Finding: pgaudit does not record denied statements
+- Evidence: demo scenario 7 lists the statements that ran (SELECT current_user, SELECT FROM orders, INSERT) but not the denied ones (SELECT national_id, UPDATE orders, DELETE, DROP TABLE). `grep -c "AUDIT.*national_id"` on the human log returns 0.
+- The denied attempts are in PostgreSQL's own error log (`ERROR:  permission denied ...`, with the unique temporary username). Failed logins and pg_hba.conf rejections are `FATAL` entries there too.
+- Consequence: monitoring needs two sources. AUDIT entries answer "who did what"; ERROR/FATAL entries answer "who tried and failed". The `STATEMENT:` lines that follow errors can carry passwords (docs/02), so consumers must not display them.
+- The jsonlog file carries the same events with fields user, dbname, remote_host, application_name, error_severity, message. The healthcheck produces `user=[unknown]` connection entries that must be filtered.

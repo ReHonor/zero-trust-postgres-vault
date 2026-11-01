@@ -64,4 +64,7 @@ say "Attacker goal:" "act without leaving a trace"
 say "Evidence:" "pgaudit lines of this demo, tied to the unique temporary usernames"
 bash scripts/pglog.sh | awk -v s="$START" '$0 >= s' | grep "AUDIT" | grep "user=v-approle" | tail -14 | cut -c1-230 || true
 echo
+echo
+echo "Denied attempts are NOT in pgaudit; they are in the PostgreSQL error log (statements omitted on purpose):"
+bash scripts/pglog.sh | awk -v s="$START" '$0 >= s' | grep -E "ERROR:  (permission denied|must be owner)|FATAL:  (password authentication failed|pg_hba)" | cut -c1-200 | tail -10 || true
 echo "Trace any line back: Vault audit log (request) -> v-approle-<identity>-... (username) -> exact SQL (pgaudit)."
