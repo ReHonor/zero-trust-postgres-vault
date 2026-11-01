@@ -13,7 +13,7 @@ else
 fi
 
 echo "[2/6] Policies (deny by default)"
-for p in analyst app admin; do
+for p in analyst app admin monitor; do
   $V policy write "$p" - < "vault/policies/$p.hcl"
 done
 
@@ -24,7 +24,7 @@ if grep -q '"approle/"' <<<"$auths"; then
 else
   $V auth enable approle
 fi
-for r in analyst app admin; do
+for r in analyst app admin monitor; do
   $V write "auth/approle/role/$r" \
     token_policies="$r" token_ttl=5m token_max_ttl=10m \
     secret_id_ttl=10m secret_id_num_uses=1
@@ -45,7 +45,7 @@ else
   DBPASS=$(grep -m1 '^VAULT_ADMIN_BOOTSTRAP_PASSWORD=' .env | cut -d= -f2-)
   if ! $V write database/config/appdb \
       plugin_name=postgresql-database-plugin \
-      allowed_roles="analyst,app,admin" \
+      allowed_roles="analyst,app,admin,monitor" \
       connection_url='postgresql://{{username}}:{{password}}@postgres:5432/appdb?sslmode=verify-full&sslrootcert=/vault/certs/ca.crt' \
       username=vault_admin \
       password="$DBPASS" \
@@ -60,10 +60,12 @@ else
 fi
 
 echo "[6/6] Dynamic credential roles"
-for pair in analyst:analyst_ro app:app_rw admin:dba_admin; do
+for pair in analyst:analyst_ro app:app_rw admin:dba_admin monitor:monitor_ro; do
   role=${pair%%:*}; group=${pair##*:}
+  ttl=30s; maxttl=5m
+  if [ "$role" = monitor ]; then ttl=10m; maxttl=1h; fi
   $V write database/roles/$role \
-    db_name=appdb default_ttl=30s max_ttl=5m \
+    db_name=appdb default_ttl=$ttl max_ttl=$maxttl \
     creation_statements="CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}' INHERIT; GRANT $group TO \"{{name}}\";" \
     revocation_statements="SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = '{{name}}'; DROP ROLE IF EXISTS \"{{name}}\";"
 done
