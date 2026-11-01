@@ -4,7 +4,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 RC="bash scripts/run-client.sh"
-START=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+START=$(date -u "+%Y-%m-%d %H:%M:%S")
 
 banner() { printf '\n==============================================================\n %s\n==============================================================\n' "$1"; }
 say()    { printf '   %-14s %s\n' "$1" "$2"; }
@@ -62,7 +62,6 @@ pause
 banner "7. Accountability: who did what, from the PostgreSQL audit log"
 say "Attacker goal:" "act without leaving a trace"
 say "Evidence:" "pgaudit lines of this demo, tied to the unique temporary usernames"
-docker compose logs --since "$START" --no-log-prefix postgres 2>/dev/null \
-  | grep "AUDIT" | grep "user=v-approle" | tail -14 | cut -c1-230 || true
+bash scripts/pglog.sh | awk -v s="$START" '$0 >= s' | grep "AUDIT" | grep "user=v-approle" | tail -14 | cut -c1-230 || true
 echo
 echo "Trace any line back: Vault audit log (request) -> v-approle-<identity>-... (username) -> exact SQL (pgaudit)."

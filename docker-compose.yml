@@ -32,6 +32,16 @@ services:
       - log_disconnections=on
       - -c
       - "log_line_prefix=%m [%p] user=%u db=%d "
+      - -c
+      - logging_collector=on
+      - -c
+      - log_destination=stderr,jsonlog
+      - -c
+      - log_directory=/var/log/pg
+      - -c
+      - log_filename=postgresql-%Y-%m-%d.log
+      - -c
+      - log_file_mode=0640
     volumes:
       - ./certs/server.crt:/certs-src/server.crt:ro
       - ./certs/server.key:/certs-src/server.key:ro
@@ -40,6 +50,7 @@ services:
       - ./postgres/init.sql:/sql/init.sql:ro
       - ./postgres/initdb/01-init.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
       - pgdata:/var/lib/postgresql/data
+      - pglogs:/var/log/pg
     ports:
       - "127.0.0.1:5432:5432"
     networks:
@@ -96,6 +107,7 @@ services:
 
 volumes:
   pgdata:
+  pglogs:
   vault-audit:
 
 networks:
