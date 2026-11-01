@@ -76,6 +76,24 @@ services:
       timeout: 3s
       retries: 20
 
+  client:
+    build: ./app
+    profiles: ["client"]
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      VAULT_ADDR: http://vault:8200
+      PGHOST: postgres
+      PGDATABASE: appdb
+      PGSSLROOTCERT: /certs/ca.crt
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt:ro
+    networks:
+      - zt
+
 volumes:
   pgdata:
   vault-audit:
