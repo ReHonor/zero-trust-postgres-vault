@@ -107,6 +107,47 @@ services:
     networks:
       - zt
 
+  dashboard:
+    build: ./dashboard
+    container_name: zt-dashboard
+    profiles: ["dashboard"]
+    restart: "no"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    group_add:
+      - "999"
+    environment:
+      VAULT_ADDR: http://vault:8200
+      PGHOST: postgres
+      PGDATABASE: appdb
+      PGSSLROOTCERT: /certs/ca.crt
+      LOG_DIR: /var/log/pg
+      ROLE_ID: ${DASH_ROLE_ID:-}
+      SECRET_ID: ${DASH_SECRET_ID:-}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:-}
+    volumes:
+      - ./certs/ca.crt:/certs/ca.crt:ro
+      - pglogs:/var/log/pg:ro
+    ports:
+      - "127.0.0.1:8080:8080"
+    networks:
+      - zt
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=3)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata:
   pglogs:

@@ -25,9 +25,16 @@ else
   $V auth enable approle
 fi
 for r in analyst app admin monitor; do
-  $V write "auth/approle/role/$r" \
-    token_policies="$r" token_ttl=5m token_max_ttl=10m \
-    secret_id_ttl=10m secret_id_num_uses=1
+  if [ "$r" = monitor ]; then
+    # long-running service: periodic token, renewed by the app, so it never needs a second secret_id
+    $V write "auth/approle/role/$r" \
+      token_policies="$r" token_period=1h \
+      secret_id_ttl=10m secret_id_num_uses=1
+  else
+    $V write "auth/approle/role/$r" \
+      token_policies="$r" token_ttl=5m token_max_ttl=10m \
+      secret_id_ttl=10m secret_id_num_uses=1
+  fi
 done
 
 echo "[4/6] Database secrets engine"
