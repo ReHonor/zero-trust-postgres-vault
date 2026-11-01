@@ -13,4 +13,5 @@ SQL
 sed -i "s|^VAULT_ADMIN_BOOTSTRAP_PASSWORD=.*|VAULT_ADMIN_BOOTSTRAP_PASSWORD=$NEWPW|" .env
 unset NEWPW
 echo "vault_admin password reset and stored in .env"
+bash scripts/cleanup-expired-roles.sh
 bash vault/vault-setup.sh

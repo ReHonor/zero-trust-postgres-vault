@@ -24,3 +24,9 @@ Remove the root token from day-to-day use, give every identity only the rights i
 - In this lab the root token plays the role of the trusted orchestrator that delivers role_id and secret_id (secret zero). Production would use platform identity (Kubernetes, cloud IAM) and response wrapping.
 - The old bootstrap value still sits in the postgres container environment and .env until recovery rewrites it, but it no longer authenticates.
 - Passwords passed to docker compose exec via -e / -v are briefly visible in the host process list (lab only).
+
+## Finding: orphaned users after a Vault restart
+- Evidence: after the restart drill, pg_roles still listed `v-approle-admin-...-1793458131`, created about 18 hours earlier. Its lease existed only in Vault's in-memory lease table, which the restart erased, so nothing revoked it.
+- The second safety net held: its VALID UNTIL was in the past, so the password could not be used to log in. The role and its group membership remained.
+- VALID UNTIL does not end sessions that are already open; Vault's revocation does (pg_terminate_backend). An orphan with an open session would stay connected.
+- Fix: scripts/cleanup-expired-roles.sh terminates sessions and drops expired v-* roles; reset-vault-admin.sh runs it. In production, persistent Vault storage keeps the lease table across restarts.
