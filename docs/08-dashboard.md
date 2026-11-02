@@ -21,3 +21,19 @@ A browser view of who did what, who tried and failed, which temporary users exis
 - Plain HTTP between the dashboard and Vault inside the Docker network (dev mode); HTTP Basic over the SSH tunnel only.
 - Log window of about 5000 lines, no retention, no search, no alerting (next: monitoring script).
 - After `start.sh` or a Vault restart, run scripts/run-dashboard.sh again.
+
+## Access
+- The dashboard listens on 127.0.0.1:8080 of the VM only. From a PC: `ssh -N -L 8080:127.0.0.1:8080 -o ServerAliveInterval=30 -o ServerAliveCountMax=4 -o ExitOnForwardFailure=yes -i <key> ubuntu@<vm>` and open http://127.0.0.1:8080 (use 127.0.0.1, not localhost: on Windows localhost may resolve to IPv6 ::1, where the tunnel does not listen).
+- The tunnel lives inside the SSH connection: when the connection drops (idle timeout), the tunnel dies with it. Keepalive options and a dedicated -N window prevent this.
+- No Oracle security-list rule is needed: the dashboard is loopback-only and the tunnel reuses SSH. A TCP test of port 8080 from the internet fails to connect.
+
+## Troubleshooting log
+- Symptom: curl to /healthz returned 000 on the VM and nothing listened on 8080.
+- Diagnosis: scripts/diag-dashboard.sh (read-only, prints no secrets) showed that the base stack, the Vault state and the compose configuration were fine, but dashboard/app.py was one line long and the container had exited with a SyntaxError. A 250-line heredoc paste had been mangled by the terminal and only a fragment of the next command remained in the file.
+- Fix: app.py was rewritten in six small chunks and verified with wc -l, py_compile and a count of top-level definitions. run-dashboard.sh now runs py_compile before building, so a broken file can never be built into an image.
+- Lesson: an image built from a broken file only fails at runtime. Verify the artifact before using it (syntax check, size, definition count) and keep pasted blocks small.
+
+## Operational notes
+- start.sh now starts the dashboard as its last step. After a Vault restart, scripts/run-dashboard.sh (or start.sh) issues a fresh single-use secret_id.
+- Each refresh of the page runs four SELECTs as the monitor's temporary user. They appear in the audit log (hidden in the UI by default, filtered out of demo scenario 7).
+- The dashboard password was rotated after being displayed during troubleshooting.

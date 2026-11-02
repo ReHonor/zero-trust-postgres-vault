@@ -3,6 +3,7 @@
 # Run it again after every `start.sh` or Vault restart: the old secret_id is spent and the old token is gone.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+python3 -m py_compile dashboard/app.py || { echo "dashboard/app.py is broken, not building"; exit 1; }
 docker compose --profile dashboard build dashboard </dev/null
 export DASH_ROLE_ID DASH_SECRET_ID
 DASH_ROLE_ID=$(bash scripts/vexec.sh read -field=role_id auth/approle/role/monitor/role-id)

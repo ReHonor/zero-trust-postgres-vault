@@ -62,7 +62,7 @@ pause
 banner "7. Accountability: who did what, from the PostgreSQL audit log"
 say "Attacker goal:" "act without leaving a trace"
 say "Evidence:" "pgaudit lines of this demo, tied to the unique temporary usernames"
-bash scripts/pglog.sh | awk -v s="$START" '$0 >= s' | grep "AUDIT" | grep "user=v-approle" | tail -14 | cut -c1-230 || true
+bash scripts/pglog.sh | awk -v s="$START" '$0 >= s' | grep "AUDIT" | grep "user=v-approle" | grep -v "user=v-approle-monitor-" | tail -14 | cut -c1-230 || true
 echo
 echo
 echo "Denied attempts are NOT in pgaudit; they are in the PostgreSQL error log (statements omitted on purpose):"

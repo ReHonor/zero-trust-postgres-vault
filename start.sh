@@ -6,14 +6,14 @@ cd "$(dirname "$0")"
 # Docker Compose gives exported shell variables priority over .env. Make sure none leak in.
 unset POSTGRES_SUPERUSER_PASSWORD VAULT_ADMIN_BOOTSTRAP_PASSWORD VAULT_ROOT_TOKEN
 
-echo "[1/5] Certificates"
+echo "[1/6] Certificates"
 if [ -f certs/ca.crt ] && [ -f certs/server.crt ] && [ -f certs/server.key ]; then
   echo "  already present"
 else
   bash scripts/gen-certs.sh
 fi
 
-echo "[2/5] Secrets (.env)"
+echo "[2/6] Secrets (.env)"
 if [ ! -f .env ] && docker volume inspect zero-trust_pgdata >/dev/null 2>&1; then
   echo "ERROR: a database volume exists but .env is missing."
   echo "  New random passwords would not match the existing data. Either restore .env,"
@@ -22,11 +22,11 @@ if [ ! -f .env ] && docker volume inspect zero-trust_pgdata >/dev/null 2>&1; the
 fi
 bash scripts/gen-env.sh
 
-echo "[3/5] Containers"
+echo "[3/6] Containers"
 docker compose up -d --build
 docker compose build client
 
-echo "[4/5] Waiting until PostgreSQL and Vault are healthy"
+echo "[4/6] Waiting until PostgreSQL and Vault are healthy"
 for name in zt-postgres zt-vault; do
   for _ in $(seq 1 90); do
     [ "$(docker inspect -f '{{.State.Health.Status}}' "$name" 2>/dev/null || echo none)" = "healthy" ] && break
@@ -36,13 +36,16 @@ for name in zt-postgres zt-vault; do
   echo "  $name healthy"
 done
 
-echo "[5/5] Configuring Vault"
+echo "[5/6] Configuring Vault"
 if ! bash vault/vault-setup.sh; then
   echo
   echo "Setup failed. Most likely Vault restarted and the rotated vault_admin password was lost."
   echo "Running the recovery procedure."
   bash scripts/reset-vault-admin.sh
 fi
+
+echo "[6/6] Dashboard"
+bash scripts/run-dashboard.sh
 
 echo
 echo "Lab is ready. Try:  bash demo.sh"
