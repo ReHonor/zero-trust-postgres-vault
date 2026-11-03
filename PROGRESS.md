@@ -19,3 +19,11 @@
   and no matching plaintext SQL/customer name during a successful query.
 - Findings: docs/09-baseline-findings.md.
 - Remaining: Phase 5C monitoring, CI security scans, README and final packaging.
+
+## Phase 5C verification - 2026-11-03
+- On-demand JSON log monitor implemented.
+- Live tests confirmed authentication, off-hours and SELECT-count alerts.
+- Nine synthetic detection/filtering/error-handling tests passed.
+- Python 3.8 timezone compatibility fixed.
+- Documentation: docs/10-monitoring.md.
+- Remaining: CI security scans, README and final packaging.
