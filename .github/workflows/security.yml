@@ -67,7 +67,6 @@ jobs:
         with:
           version: v0.76.1
           trivy-config: trivy-config.yaml
-          trivy-config: trivy-config.yaml
           scan-type: config
           scan-ref: .
           format: table
