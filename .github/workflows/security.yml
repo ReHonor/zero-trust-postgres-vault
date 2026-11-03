@@ -1,0 +1,117 @@
+name: Security checks
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scripts:
+    name: Scripts / Python ${{ matrix.python }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.8", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Check Bash syntax
+        run: git ls-files -z '*.sh' | xargs -0 -r -n1 bash -n
+      - name: Check Python syntax
+        run: git ls-files -z '*.py' | xargs -0 -r python -m py_compile
+      - name: Test monitoring rules
+        run: python scripts/monitor-test.py
+
+  secrets:
+    name: Gitleaks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test scanner rules and exceptions
+        run: bash scripts/gitleaks-test.sh
+      - name: Scan Git history
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo:ro" -w /repo \
+            -e GIT_CONFIG_COUNT=1 \
+            -e GIT_CONFIG_KEY_0=safe.directory \
+            -e GIT_CONFIG_VALUE_0=/repo \
+            ghcr.io/gitleaks/gitleaks:v8.30.1 \
+            git . --config /repo/.gitleaks.toml \
+            --log-opts="--all" --redact=100 --no-banner
+
+  configuration:
+    name: Trivy / configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Scan supported configuration files
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: config
+          scan-ref: .
+          format: table
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+
+  images:
+    name: Trivy / ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: postgres
+            context: postgres
+            image: zt-ci-postgres:scan
+          - name: client
+            context: app
+            image: zt-ci-client:scan
+          - name: dashboard
+            context: dashboard
+            image: zt-ci-dashboard:scan
+          - name: vault
+            context: ""
+            image: hashicorp/vault:1.21.4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build project image
+        if: matrix.context != ''
+        env:
+          BUILD_CONTEXT: ${{ matrix.context }}
+          IMAGE_REF: ${{ matrix.image }}
+        run: docker build --pull -t "$IMAGE_REF" "$BUILD_CONTEXT"
+      - name: Pull upstream image
+        if: matrix.context == ''
+        env:
+          IMAGE_REF: ${{ matrix.image }}
+        run: docker pull "$IMAGE_REF"
+      - name: Scan image vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ${{ matrix.image }}
+          scanners: vuln
+          format: table
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
