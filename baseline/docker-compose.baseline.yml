@@ -1,0 +1,27 @@
+# INTENTIONALLY INSECURE "before" system. Fake data. Never deploy.
+# No published ports and an internal network: reachable only from the attacker container.
+name: zt-baseline
+
+services:
+  db:
+    image: postgres:16
+    container_name: zt-baseline-db
+    environment:
+      POSTGRES_USER: app            # the application account IS the superuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: appdb
+    volumes:
+      - ./init-data.sql:/docker-entrypoint-initdb.d/01-data.sql:ro
+    networks:
+      - baseline
+
+  attacker:
+    build: ./attacker
+    image: zt-baseline-attacker:local
+    container_name: zt-baseline-attacker
+    networks:
+      - baseline
+
+networks:
+  baseline:
+    internal: true
