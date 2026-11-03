@@ -19,10 +19,10 @@ jobs:
       matrix:
         python: ["3.8", "3.12"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - name: Check Bash syntax
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -59,12 +59,15 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Scan supported configuration files
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: v0.76.1
+          trivy-config: trivy-config.yaml
+          trivy-config: trivy-config.yaml
           scan-type: config
           scan-ref: .
           format: table
@@ -92,7 +95,7 @@ jobs:
             context: ""
             image: hashicorp/vault:1.21.4
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Build project image
@@ -109,9 +112,14 @@ jobs:
       - name: Scan image vulnerabilities
         uses: aquasecurity/trivy-action@v0.36.0
         with:
+          version: v0.76.1
           image-ref: ${{ matrix.image }}
           scanners: vuln
-          format: table
+          format: json
+          output: trivy-image.json
           severity: HIGH,CRITICAL
           ignore-unfixed: false
           exit-code: "1"
+      - name: Summarize image findings
+        if: always()
+        run: python3 scripts/trivy-summary.py trivy-image.json >> "$GITHUB_STEP_SUMMARY"

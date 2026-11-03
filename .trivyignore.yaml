@@ -1,0 +1,15 @@
+misconfigurations:
+  - id: AVD-DS-0002
+    paths:
+      - postgres/Dockerfile
+    statement: >-
+      Lab startup wrapper needs root to copy TLS files and set ownership
+      and permissions before invoking the official entrypoint.
+      The running PostgreSQL process was verified as UID/GID 999.
+  - id: AVD-DS-0002
+    paths:
+      - baseline/attacker/Dockerfile
+    statement: >-
+      Lab-only attacker toolbox also runs privileged packet-capture
+      containers using explicit NET_RAW and NET_ADMIN capabilities.
+      Retain root for the current capture implementation.
