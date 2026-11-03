@@ -64,7 +64,7 @@ services:
       retries: 20
 
   vault:
-    image: hashicorp/vault:1.21.4
+    image: hashicorp/vault:2.2.1
     container_name: zt-vault
     restart: "no"
     cap_add:

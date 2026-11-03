@@ -92,7 +92,7 @@ jobs:
             image: zt-ci-dashboard:scan
           - name: vault
             context: ""
-            image: hashicorp/vault:1.21.4
+            image: hashicorp/vault:2.2.1
     steps:
       - uses: actions/checkout@v7
         with:

@@ -10,7 +10,7 @@ Execution: GitHub-hosted runners; no Oracle VM access or lab secrets.
 - Four Gitleaks exception tests and a full fetched-history scan.
 - Trivy HIGH/CRITICAL configuration findings.
 - Trivy HIGH/CRITICAL vulnerabilities in the custom PostgreSQL, client
-  and dashboard images, plus hashicorp/vault:1.21.4.
+  and dashboard images, plus hashicorp/vault:2.2.1.
 - Unfixed image vulnerabilities remain included.
 
 ## Exceptions and scope
