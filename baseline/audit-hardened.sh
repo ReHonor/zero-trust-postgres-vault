@@ -30,7 +30,11 @@ docker run -d --name zt-sniff-hardened --network container:zt-postgres \
   --cap-add NET_RAW --cap-add NET_ADMIN zt-baseline-attacker:local \
   timeout 20 tcpdump -n -i any -l -A -s0 'tcp port 5432' >/dev/null
 sleep 3
-bash scripts/run-client.sh analyst sql analyst "SELECT id, full_name, city FROM customers LIMIT 2" >/dev/null 2>&1
+if ! bash scripts/run-client.sh analyst sql analyst "SELECT id, full_name, city FROM customers LIMIT 2"; then
+  echo "FAIL: analyst query failed; capture comparison is inconclusive"
+  docker rm -f zt-sniff-hardened >/dev/null 2>&1 || true
+  exit 1
+fi
 sleep 14
 cap=$(docker logs zt-sniff-hardened 2>&1)
 echo "captured packets mentioning the SQL text:   $(grep -ac 'full_name' <<<"$cap")"

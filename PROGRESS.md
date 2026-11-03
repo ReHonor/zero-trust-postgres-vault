@@ -9,3 +9,13 @@
 
 ## Notes
 - Environment: Ubuntu VM on Oracle Cloud, Docker Engine + Compose v2
+
+## Phase 5B verification - 2026-11-03
+- Baseline deployed without published host ports.
+- Repaired empty baseline/audit.sh; all seven scenarios executed.
+- Confirmed plaintext data exposure, static password reuse, superuser
+  operations, container command execution and missing audit configuration.
+- Hardened tests confirmed certificate checks, rejected login attempts,
+  and no matching plaintext SQL/customer name during a successful query.
+- Findings: docs/09-baseline-findings.md.
+- Remaining: Phase 5C monitoring, CI security scans, README and final packaging.
