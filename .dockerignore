@@ -1,0 +1,7 @@
+.git
+.env
+certs
+**/__pycache__
+**/*.pyc
+work
+outputs

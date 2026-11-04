@@ -1,0 +1,39 @@
+id|group|kind|title|expected
+unique_users|Identity|normal|Request two temporary identities|Different database usernames
+app_admin|Identity|attack|Application requests admin credentials|Vault denies access
+analyst_app|Identity|attack|Analyst requests application credentials|Vault denies access
+approle_replay|Identity|attack|Reuse a single-use AppRole secret|Second login denied
+approle_invalid|Identity|attack|Log in with an invalid AppRole identity|Authentication denied
+bad_password|Identity|attack|Use a wrong database password|Authentication denied
+analyst_orders|Access|normal|Analyst reads orders|Query succeeds
+analyst_customers|Access|normal|Analyst reads permitted customer columns|Query succeeds
+app_orders|Access|normal|Application reads orders|Query succeeds
+app_insert|Access|normal|Application inserts a test order|Insert succeeds then rolls back
+app_update|Access|normal|Application updates a test order|Update succeeds then rolls back
+admin_ddl|Access|normal|Administrator creates a test table|Creation succeeds then rolls back
+monitor_views|Access|normal|Monitor reads its restricted views|Query succeeds
+analyst_national|Access|attack|Analyst reads national identifiers|PostgreSQL denies access
+analyst_email|Access|attack|Analyst reads customer email addresses|PostgreSQL denies access
+analyst_star|Access|attack|Analyst requests all customer columns|PostgreSQL denies access
+analyst_update|Access|attack|Analyst changes order amounts|PostgreSQL denies access
+app_delete|Access|attack|Application deletes orders|PostgreSQL denies access
+app_drop|Access|attack|Application drops the orders table|PostgreSQL denies access
+app_file|Access|attack|Application reads a server file|PostgreSQL denies access
+app_program|Access|attack|Application executes an operating-system command|PostgreSQL denies access
+app_escalate|Access|attack|Application assumes the administrator role|PostgreSQL denies access
+tls_ok|TLS|normal|Connect using verified TLS|Certificate and hostname accepted
+tls_plain|TLS|attack|Connect without encryption|PostgreSQL rejects the connection
+tls_hostname|TLS|attack|Verify the server against a wrong hostname|Certificate verification fails
+tls_ca|TLS|attack|Connect without trusting the private CA|Certificate verification fails
+expiry|Lifetime|attack|Reuse a stolen credential after expiry|First login works then reuse fails
+revoke_login|Lifetime|attack|Reuse credentials after their token is revoked|New connection denied
+revoke_session|Lifetime|attack|Keep a session open during revocation|Existing session terminated
+audit_allowed|Monitoring|observe|Trace an allowed query|Matching audit evidence appears
+audit_denied|Monitoring|observe|Trace a denied query|Matching error-log evidence appears
+monitor_burst|Monitoring|observe|Generate a burst of SELECT statements|SELECT-count alert appears
+monitor_failed|Monitoring|observe|Generate an intentional failed login|Authentication alert appears
+monitor_offhours|Monitoring|observe|Evaluate activity outside test working hours|Off-hours alert appears
+baseline_plain|Baseline|attack|Read sensitive data without TLS|Insecure baseline allows it
+baseline_reuse|Baseline|attack|Reuse the baseline static password|Credential remains reusable
+baseline_admin|Baseline|attack|Delete data as the baseline application|Deletion succeeds then rolls back
+baseline_audit|Baseline|observe|Inspect baseline audit configuration|Missing audit controls are demonstrated

@@ -219,10 +219,10 @@ def require_login():
 def security_headers(resp):
     resp.headers["Content-Security-Policy"] = (
         "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; "
-        "form-action 'none'; frame-ancestors 'none'")
+        "form-action 'self'; frame-ancestors 'none'")
     resp.headers["X-Content-Type-Options"] = "nosniff"
     resp.headers["Cache-Control"] = "no-store"
-    resp.headers["Referrer-Policy"] = "no-referrer"
+    resp.headers["Referrer-Policy"] = "same-origin"
     return resp
 
 
@@ -251,6 +251,7 @@ TEMPLATE = """<!doctype html>
  a{color:#93c5fd}
 </style></head><body>
 <header><h1>Zero-trust database dashboard</h1>
+<p><a href="/demo/" style="display:inline-block;padding:8px 14px;background:#2563eb;color:white;border-radius:6px;text-decoration:none">Open Demo Lab</a></p>
 <div class="muted">Read-only. Times are UTC. Refreshes every 15 s. Identity: Vault AppRole "monitor" (temporary database user, monitor schema only).</div></header>
 <main>
 {% for e in errors %}<div class="err">{{ e }}</div>{% endfor %}
@@ -299,3 +300,7 @@ def index():
     return render_template_string(TEMPLATE, errors=errors, panels=panels, vault_roles=vault_roles,
                                   audit=audit, events=events, counts=counts, show_own=show_own,
                                   max_lines=MAX_LINES)
+
+
+from demo_ui import demo_bp
+app.register_blueprint(demo_bp)

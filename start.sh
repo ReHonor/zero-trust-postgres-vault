@@ -45,6 +45,7 @@ if ! bash vault/vault-setup.sh; then
 fi
 
 echo "[6/6] Dashboard"
+bash scripts/run-demo.sh
 bash scripts/run-dashboard.sh
 
 echo

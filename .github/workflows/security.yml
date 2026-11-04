@@ -122,3 +122,28 @@ jobs:
       - name: Summarize image findings
         if: always()
         run: python3 scripts/trivy-summary.py trivy-image.json >> "$GITHUB_STEP_SUMMARY"
+
+  demo_image:
+    name: Trivy / demo runner
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Build and test demo runner
+        run: docker build --pull -f demo/Dockerfile -t zt-ci-demo:scan .
+      - name: Scan demo runner image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          version: v0.76.1
+          image-ref: zt-ci-demo:scan
+          scanners: vuln
+          format: json
+          output: trivy-demo.json
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: "1"
+      - name: Summarize demo runner findings
+        if: always()
+        run: python3 scripts/trivy-summary.py trivy-demo.json >> "$GITHUB_STEP_SUMMARY"

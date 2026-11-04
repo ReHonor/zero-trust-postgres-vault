@@ -36,3 +36,16 @@
 - Detailed gosu analysis deferred by choice.
 - README includes architecture, operation, limitations and documentation links.
 - Presentation guide: docs/13-demo-guide.md.
+
+## Interactive web demo update
+- Added a 38-scenario web runner with asynchronous results and log evidence.
+- Added session-bound CSRF checks and an internal authenticated runner API.
+- Protected SQL mutations use rollback; the web baseline has its own volume/network.
+- Added scoped broker policy, startup integration, regression tests and CI image scan.
+- Representative web scenarios passed on the VM: permitted reads and inserts,
+  restricted-column denial, Vault policy denial, SecretID replay prevention,
+  plaintext/wrong-host TLS rejection, credential expiry, token revocation,
+  session termination, audit evidence and all three monitoring alerts.
+- Baseline plaintext access and deletion-with-rollback behaved as expected.
+- Fixed the form Origin check interaction by using Referrer-Policy: same-origin.
+- Some of the 38 individual scenarios remain untested; existing image findings remain open.

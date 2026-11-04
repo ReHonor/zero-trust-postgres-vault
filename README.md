@@ -121,3 +121,18 @@ Logs can contain sensitive information and are not tamper-proof.
 - [Project progress](PROGRESS.md)
 
 License: [MIT](LICENSE).
+
+## Interactive web demo
+
+Open `/demo/` using the existing dashboard login and SSH tunnel. The 38 options
+cover normal access, permission denials, identity boundaries, TLS, expiry,
+revocation, audit evidence, monitoring and the insecure baseline.
+Runs show progress, an actual outcome and evidence. Table writes are rolled
+back; audit records and sequence counters can still change.
+
+    bash scripts/run-demo.sh
+    bash scripts/run-dashboard.sh
+
+The trusted startup helper configures a limited demo broker; the web services
+receive no Vault root token or Docker socket. Read [the web demo guide](docs/14-web-demo.md)
+for permissions, isolation, limitations and troubleshooting.
